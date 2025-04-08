@@ -1,30 +1,30 @@
-FROM php:8.1
+FROM php:8.1-cli
 
-# Cài các gói cần thiết
+# Cài dependencies hệ thống
 RUN apt-get update && apt-get install -y \
-    unzip zip curl git libzip-dev sqlite3 \
+    git curl unzip zip sqlite3 libzip-dev pkg-config \
     && docker-php-ext-install pdo pdo_sqlite zip
 
 # Cài Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set thư mục làm việc
+# Tạo thư mục làm việc
 WORKDIR /var/www
 
-# Copy toàn bộ code vào container
+# Copy mã nguồn Laravel
 COPY . .
 
-# Cài thư viện Laravel
+# Cài thư viện PHP Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Tạo key cho Laravel
-RUN php artisan key:generate
+# Tạo APP key (nếu chưa có)
+RUN php artisan key:generate || true
 
-# Phân quyền thư mục
+# Phân quyền
 RUN chmod -R 775 storage bootstrap/cache
 
-# Expose port 8080 để Render có thể truy cập
+# Mở port 8080 cho Render
 EXPOSE 8080
 
-# Lệnh chạy app
+# Lệnh khởi động Laravel
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
